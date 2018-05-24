@@ -1,0 +1,11 @@
+*.mav
+*.ttf
+*.vc*
+*.png
+*.bmp
+*.idb
+*.obj
+*.log
+*.pdb
+*.tlog
+*.state
