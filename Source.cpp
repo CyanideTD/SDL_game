@@ -4,6 +4,9 @@
 #include "SDL_ttf.h"
 #include <stdio.h>
 #include <string>
+#include <sstream>
+#include "timer.h"
+#include <iostream>
 
 using namespace std;
 
@@ -12,9 +15,25 @@ const int kMOUSE_IN = 1;
 const int kMOUSE_UP = 2;
 const int kMOUSE_DOWN = 3;
 
-SDL_Window * window;
-SDL_Surface * window_surface;
-SDL_Surface * button_surface;
+const int kScreenWidth = 640;
+const int kScreenHeight = 480;
+
+const int kDotHeight = 20;
+const int kDotWidth = 20;
+
+const int kFramesPerSeconds = 20;
+
+SDL_Window * window = NULL;
+SDL_Surface * window_surface = NULL;
+SDL_Surface * dot_surface = NULL;
+Mix_Music * music = NULL;
+
+Mix_Chunk * scratch = NULL;
+Mix_Chunk * high = NULL;
+Mix_Chunk * med = NULL;
+Mix_Chunk * low = NULL;
+
+TTF_Font * font = NULL;
 
 SDL_Rect clips[4];
 
@@ -49,7 +68,7 @@ void LoadImage(string filename)
 
     if (loadedImage != NULL)
     {
-        button_surface = SDL_ConvertSurfaceFormat(loadedImage, SDL_PIXELFORMAT_RGBA32, 0);
+        dot_surface = SDL_ConvertSurfaceFormat(loadedImage, SDL_PIXELFORMAT_RGBA32, 0);
 
         SDL_FreeSurface(loadedImage);
     }
@@ -68,24 +87,125 @@ public:
     bool change = false;
 };
 
+class Dot
+{
+public:
+    int x, y;
+    int x_speed, y_speed;
+
+public:
+    Dot();
+    void HandleEvent(const SDL_Event & event);
+    void Move();
+};
+
+Dot::Dot()
+{
+    x = 0;
+    y = 0;
+    x_speed = 0;
+    y_speed = 0;
+}
+
+void Dot::HandleEvent(const SDL_Event & event)
+{
+
+    if (event.type == SDL_KEYDOWN)
+    {
+        switch (event.key.keysym.scancode)
+        {
+        case SDL_SCANCODE_UP:
+            
+            y_speed -= 10;
+            break;
+        case SDL_SCANCODE_DOWN:
+            y_speed += 10;
+            break;
+        case SDL_SCANCODE_LEFT:
+            x_speed -= 10;
+            break;
+        case SDL_SCANCODE_RIGHT:
+            x_speed += 10;
+            break;
+        default:
+            break;
+        }
+        printf("x_speed: %d \n", x_speed);
+        printf("y_speed: %d \n", y_speed);
+    }
+    else if (event.type == SDL_KEYUP)
+    {
+        switch (event.key.keysym.scancode)
+        {
+        case SDL_SCANCODE_UP:
+            y_speed += 10;
+            break;
+        case SDL_SCANCODE_DOWN:
+            y_speed -= 10;
+            break;
+        case SDL_SCANCODE_LEFT:
+            x_speed += 10;
+            break;
+        case SDL_SCANCODE_RIGHT:
+            x_speed -= 10;
+            break;
+        default:
+            break;
+        }
+        printf("x_speed: %d \n", x_speed);
+        printf("y_speed: %d \n", y_speed);
+    }
+}
+
+void Dot::Move()
+{
+    x += x_speed;
+    
+    if (x < 0)
+    {
+        x = 0;
+    }
+
+    if (x > kScreenWidth - kDotWidth)
+    {
+        x = kScreenWidth - kDotWidth;
+    }
+
+    y += y_speed;
+
+    if (y < 0)
+    {
+        y = 0;
+    }
+
+    if (y > kScreenHeight - kDotHeight)
+    {
+        y = kScreenHeight - kDotHeight;
+    }
+}
+
+
+
+
 void Cleanup()
 {
-    SDL_FreeSurface(button_surface);
+    SDL_FreeSurface(dot_surface);
+    Mix_FreeChunk(scratch);
+    Mix_FreeChunk(high);
+    Mix_FreeChunk(med);
+    Mix_FreeChunk(low);
+    Mix_FreeMusic(music);
+
+    TTF_CloseFont(font);
+
+    TTF_Quit();
+    Mix_CloseAudio();
     SDL_Quit();
 }
 
 int main(int argc, char* args[])
 {
     SDL_Init(SDL_INIT_EVERYTHING);
-
-    Mix_Music * music = NULL;
-
-    Mix_Chunk * scratch = NULL;
-    Mix_Chunk * high = NULL;
-    Mix_Chunk * med = NULL;
-    Mix_Chunk * low = NULL;
-
-    TTF_Font * font = NULL;
     SDL_Color textColor = { 0, 0, 0 };
 
     if (TTF_Init() == -1)
@@ -102,57 +222,65 @@ int main(int argc, char* args[])
         return false;
     }
 
+    music = Mix_LoadMUS("beat.wav");
+
+    //如果加载音乐出了问题
+    if (music == NULL)
+    {
+        return false;
+    }
+
+    //加载声效
+    scratch = Mix_LoadWAV("scratch.wav");
+    high = Mix_LoadWAV("high.wav");
+    med = Mix_LoadWAV("medium.wav");
+    low = Mix_LoadWAV("low.wav");
+
     window = SDL_CreateWindow("MyGame", SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, 640, 480, 0);
     window_surface = SDL_GetWindowSurface(window);
     SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
 
     //LoadImage("button.png");
-    Button button;
-    button_surface = TTF_RenderText_Solid(font, "The quick brown fox jumps", textColor);
-    SDL_Rect rect;
-    rect.x = 100;
-    rect.y = 100;
-    SDL_BlitSurface(button_surface, NULL, window_surface, &rect);
-    SDL_UpdateWindowSurface(window);
+
+    Dot dot;
+    LoadImage("dot.bmp");
+
     bool quit = false;
 
     SDL_Event event;
 
     //button.ShowButton();
 
+    Timer fps;
+
+    Timer update;
+
+    bool cap = false;
+
+    int frames = 0;
+
     while (!quit)
     {
+        fps.StartClock();
         while (SDL_PollEvent(&event))
         {
-            //switch (event.type)
-            //{
-            //case SDL_QUIT:
-            //    quit = true;
-            //    printf("Press Quit");
-            //    Cleanup();
-            //    break;
-            //default:
-            //    button.HandleEvent(event);
-            //    button.ShowButton();
-            //    break;
-            //}
+            dot.HandleEvent(event);
+            frames++;
+            std::cout << frames << endl;
         }
-        const Uint8 *keystates = SDL_GetKeyboardState(NULL);
-        if (keystates[SDL_SCANCODE_LEFT])
+        dot.Move();
+        SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
+        SDL_Rect rect;
+        rect.x = dot.x;
+        rect.y = dot.y;
+        if (fps.GetTicks() < (1000 / kFramesPerSeconds))
         {
-            button.rect = &clips[kMOUSE_OUT];
-            button.change = true;
-            button.ShowButton();
+            SDL_Delay((1000 / kFramesPerSeconds) - fps.GetTicks());
+            fps.StopClock();
         }
-
-        if (keystates[SDL_SCANCODE_RIGHT])
-        {
-            button.rect = &clips[kMOUSE_IN];
-            button.change = true;
-            button.ShowButton();
-        }
-
+        SDL_BlitSurface(dot_surface, NULL, window_surface, &rect);
+        SDL_UpdateWindowSurface(window);
     }
 
     return 0;
@@ -229,7 +357,7 @@ bool Button::ShowButton()
         return true;
     }
 
-    SDL_BlitSurface(button_surface, rect, window_surface, &box);
+    SDL_BlitSurface(dot_surface, rect, window_surface, &box);
 
     SDL_UpdateWindowSurface(window);
 
