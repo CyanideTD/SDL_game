@@ -5,8 +5,8 @@
 class Box : public Object
 {
 public:
-    virtual void init();
+    virtual void init(int x, int y);
     virtual void Move();
-    virtual void Display();
+    virtual void Display(SDL_Surface* surface);
     virtual void CheckCollision(Dot * dot);
 };
