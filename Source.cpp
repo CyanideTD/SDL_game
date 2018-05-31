@@ -1,41 +1,56 @@
-#include "SDL.h"
-#include "SDL_image.h"
-#include "SDL_mixer.h"
-#include "SDL_ttf.h"
-#include <stdio.h>
-#include <string>
-#include <sstream>
-#include "timer.h"
-#include <iostream>
+#include "std_header.h"
 
 using namespace std;
 
-const int kMOUSE_OUT = 0;
-const int kMOUSE_IN = 1;
-const int kMOUSE_UP = 2;
-const int kMOUSE_DOWN = 3;
+bool CheckCollision(const SDL_Rect* box, const SDL_Rect* wall)
+{
+    int box_left = box->x;
+    int box_right = box->x + box->w;
+    int box_top = box->y;
+    int box_bottom = box->y + box->h;
 
-const int kScreenWidth = 640;
-const int kScreenHeight = 480;
+    int wall_left = wall->x;
+    int wall_right = wall->x + wall->w;
+    int wall_top = wall->y;
+    int wall_bottom = wall->y + wall->h;
 
-const int kDotHeight = 20;
-const int kDotWidth = 20;
+    if (box_left >= wall_right)
+    {
+        return false;
+    }
 
-const int kFramesPerSeconds = 20;
+    if (box_right <= wall_left)
+    {
+        return false;
+    }
 
-SDL_Window * window = NULL;
-SDL_Surface * window_surface = NULL;
-SDL_Surface * dot_surface = NULL;
-Mix_Music * music = NULL;
+    if (box_top >= wall_bottom)
+    {
+        return false;
+    }
 
-Mix_Chunk * scratch = NULL;
-Mix_Chunk * high = NULL;
-Mix_Chunk * med = NULL;
-Mix_Chunk * low = NULL;
+    if (box_bottom <= wall_top)
+    {
+        return false;
+    }
 
-TTF_Font * font = NULL;
+    return true;
+}
 
-SDL_Rect clips[4];
+bool CheckBoxesCollision(const vector<SDL_Rect> &boxes1, const vector<SDL_Rect> &boxes2)
+{
+    for (int i = 0; i < boxes1.size(); i++)
+    {
+        for (int j = 0; j < boxes2.size(); j++)
+        {
+            if (CheckCollision(&boxes1[i], &boxes2[j]))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 void SetClips()
 {
@@ -69,7 +84,8 @@ void LoadImage(string filename)
     if (loadedImage != NULL)
     {
         dot_surface = SDL_ConvertSurfaceFormat(loadedImage, SDL_PIXELFORMAT_RGBA32, 0);
-
+        Uint32 colorkey = SDL_MapRGB(dot_surface->format, 0xFF, 0xFF, 0xFF);
+        SDL_SetColorKey(dot_surface, SDL_TRUE, colorkey);
         SDL_FreeSurface(loadedImage);
     }
 }
@@ -86,106 +102,6 @@ public:
     SDL_Rect box;
     bool change = false;
 };
-
-class Dot
-{
-public:
-    int x, y;
-    int x_speed, y_speed;
-
-public:
-    Dot();
-    void HandleEvent(const SDL_Event & event);
-    void Move();
-};
-
-Dot::Dot()
-{
-    x = 0;
-    y = 0;
-    x_speed = 0;
-    y_speed = 0;
-}
-
-void Dot::HandleEvent(const SDL_Event & event)
-{
-
-    if (event.type == SDL_KEYDOWN)
-    {
-        switch (event.key.keysym.scancode)
-        {
-        case SDL_SCANCODE_UP:
-            
-            y_speed -= 10;
-            break;
-        case SDL_SCANCODE_DOWN:
-            y_speed += 10;
-            break;
-        case SDL_SCANCODE_LEFT:
-            x_speed -= 10;
-            break;
-        case SDL_SCANCODE_RIGHT:
-            x_speed += 10;
-            break;
-        default:
-            break;
-        }
-        printf("x_speed: %d \n", x_speed);
-        printf("y_speed: %d \n", y_speed);
-    }
-    else if (event.type == SDL_KEYUP)
-    {
-        switch (event.key.keysym.scancode)
-        {
-        case SDL_SCANCODE_UP:
-            y_speed += 10;
-            break;
-        case SDL_SCANCODE_DOWN:
-            y_speed -= 10;
-            break;
-        case SDL_SCANCODE_LEFT:
-            x_speed += 10;
-            break;
-        case SDL_SCANCODE_RIGHT:
-            x_speed -= 10;
-            break;
-        default:
-            break;
-        }
-        printf("x_speed: %d \n", x_speed);
-        printf("y_speed: %d \n", y_speed);
-    }
-}
-
-void Dot::Move()
-{
-    x += x_speed;
-    
-    if (x < 0)
-    {
-        x = 0;
-    }
-
-    if (x > kScreenWidth - kDotWidth)
-    {
-        x = kScreenWidth - kDotWidth;
-    }
-
-    y += y_speed;
-
-    if (y < 0)
-    {
-        y = 0;
-    }
-
-    if (y > kScreenHeight - kDotHeight)
-    {
-        y = kScreenHeight - kDotHeight;
-    }
-}
-
-
-
 
 void Cleanup()
 {
@@ -205,6 +121,11 @@ void Cleanup()
 
 int main(int argc, char* args[])
 {
+    wall.x = 200;
+    wall.y = 200;
+    wall.h = 200;
+    wall.w = 20;
+
     SDL_Init(SDL_INIT_EVERYTHING);
     SDL_Color textColor = { 0, 0, 0 };
 
@@ -243,7 +164,8 @@ int main(int argc, char* args[])
 
     //LoadImage("button.png");
 
-    Dot dot;
+    Dot player(0, 0);
+    Dot barrier(200, 200);
     LoadImage("dot.bmp");
 
     bool quit = false;
@@ -265,21 +187,21 @@ int main(int argc, char* args[])
         fps.StartClock();
         while (SDL_PollEvent(&event))
         {
-            dot.HandleEvent(event);
+            player.HandleEvent(event);
             frames++;
             std::cout << frames << endl;
         }
-        dot.Move();
+        player.Move(barrier);
         SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
-        SDL_Rect rect;
-        rect.x = dot.x;
-        rect.y = dot.y;
+        SDL_BlitSurface(dot_surface, NULL, window_surface, &barrier.rect);
+        SDL_BlitSurface(dot_surface, NULL, window_surface, &player.rect);
+
         if (fps.GetTicks() < (1000 / kFramesPerSeconds))
         {
             SDL_Delay((1000 / kFramesPerSeconds) - fps.GetTicks());
             fps.StopClock();
         }
-        SDL_BlitSurface(dot_surface, NULL, window_surface, &rect);
+
         SDL_UpdateWindowSurface(window);
     }
 

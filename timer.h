@@ -1,5 +1,5 @@
 #pragma once
-#include "SDL.h"
+#include "std_header.h"
 
 class Timer
 {
