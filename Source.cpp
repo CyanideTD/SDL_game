@@ -106,12 +106,14 @@ void Cleanup()
     SDL_Quit();
 }
 
+int player1_score = 0;
+int player2_score = 0;
+bool reset = true;
+
 int main(int argc, char* args[])
 {
-    wall.x = 200;
-    wall.y = 200;
-    wall.h = 200;
-    wall.w = 20;
+    SDL_Surface* score1 = NULL;
+    SDL_Surface* score2 = NULL;
 
     SDL_Init(SDL_INIT_EVERYTHING);
     SDL_Color textColor = { 0, 0, 0 };
@@ -155,11 +157,10 @@ int main(int argc, char* args[])
     ball.SetSpeed(1, 0);
 
     Box player1;
-    player1.init(640 - kBoxWidth, 0, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN);
+    player1.init(640 - kBoxWidth, 0, SDL_SCANCODE_W, SDL_SCANCODE_S);
 
     Box player2;
-    player2.init(0, 0, SDL_SCANCODE_W, SDL_SCANCODE_S);
-
+    player2.init(0, 0, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN);
     bool quit = false;
 
     SDL_Event event;
@@ -176,14 +177,19 @@ int main(int argc, char* args[])
     {
         fps.start();
         update.start();
-        int i = 0;
-        frames++;
-        while (i < 10 && SDL_PollEvent(&event))
+        if (reset)
         {
-            i++;
+            player2.init(20, 200, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN);
+            player1.init(620 - kBoxWidth, 200, SDL_SCANCODE_W, SDL_SCANCODE_S);
+            ball.SetPos(320, 240);
+            ball.SetSpeed(2, 0);
+            reset = false;
+        }
+        frames++;
+        while (SDL_PollEvent(&event))
+        {
             player1.HandleEvent(event);
             player2.HandleEvent(event);
-            std::cout << frames << endl;
         }
         if (update.get_ticks() > 1000)
         {
@@ -205,6 +211,22 @@ int main(int argc, char* args[])
         player1.Display(window_surface);
         player2.Display(window_surface);
         ball.Display(window_surface);
+
+        stringstream ss;
+        ss << player1_score;
+        score1 = TTF_RenderText_Solid(font, ss.str().c_str(), textColor);
+        stringstream st;
+        st << player2_score;
+        score2 = TTF_RenderText_Solid(font, st.str().c_str(), textColor);
+        SDL_Rect rect;
+        rect.x = 100;
+        rect.y = 0;
+        SDL_BlitSurface(score1, NULL, window_surface, &rect);
+        SDL_FreeSurface(score1);
+
+        rect.x = 540;
+        SDL_BlitSurface(score2, NULL, window_surface, &rect);
+        SDL_FreeSurface(score2);
         SDL_UpdateWindowSurface(window);
     }
 

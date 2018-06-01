@@ -37,3 +37,8 @@ extern Mix_Chunk * low;
 extern TTF_Font * font;
 
 extern SDL_Rect clips[4];
+
+extern int player1_score;
+extern int player2_score;
+
+extern bool reset;

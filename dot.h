@@ -22,4 +22,5 @@ public:
     void SetSpeed(int x, int y);
     void Display(SDL_Surface* surface);
     void SetSurface(SDL_Surface * image);
+    void SetPos(int x, int y);
 };

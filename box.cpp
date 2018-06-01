@@ -6,9 +6,9 @@ void Box::init(int x, int y, int u, int d)
     rect.y = y;
     rect.w = kBoxWidth;
     rect.h = kBoxHeight;
-    
-    up = u;
-    down = d;
+   
+    up_key = u;
+    down_key = d;
 
     x_speed = 0;
     y_speed = 0;
@@ -35,45 +35,40 @@ void Box::HandleEvent(const SDL_Event &event)
 {
     if (event.type == SDL_KEYDOWN)
     {
-        const Uint8* keystate = SDL_GetKeyboardState(NULL);
-        switch (event.key.keysym.scancode)
+        if (event.key.keysym.scancode == up_key)
         {
-        case SDL_SCANCODE_UP:
             if (y_speed == 0)
             {
                 y_speed -= 10;
             }
-            break;
-        case SDL_SCANCODE_DOWN:
+        }
+        else if (event.key.keysym.scancode == down_key)
+        {
             if (y_speed == 0)
             {
                 y_speed += 10;
             }
-            break;
-        default:
-            break;
         }
     }
     else if (event.type == SDL_KEYUP)
     {
-        switch (event.key.keysym.scancode)
+        if (event.key.keysym.scancode == up_key)
         {
-        case SDL_SCANCODE_UP:
-            if (y_speed < 0)
+            if (y_speed != 0)
             {
                 y_speed += 10;
             }
-            break;
-        case SDL_SCANCODE_DOWN:
-            if (y_speed > 0)
+        }
+        else if (event.key.keysym.scancode == down_key)
+        {
+            if (y_speed != 0)
             {
                 y_speed -= 10;
             }
-            break;
-        default:
-            break;
         }
     }
+
+
 }
 
 int Box::GetSpeedX()

@@ -78,12 +78,16 @@ void Dot::Move(Box & player1, Box & player2)
     {
         rect.x = 0;
         x_speed = -x_speed;
+        player2_score++;
+        reset = true;
     }
 
     if (rect.x > kScreenWidth - kDotWidth)
     {
         rect.x = kScreenWidth - kDotWidth;
         x_speed = -x_speed;
+        player1_score++;
+        reset = true;
     }
 
     rect.y += y_speed;
@@ -129,4 +133,10 @@ void Dot::Display(SDL_Surface * window_surface)
 void Dot::SetSurface(SDL_Surface * image)
 {
     surface = image;
+}
+
+void Dot::SetPos(int x, int y)
+{
+    rect.x = x;
+    rect.y = y;
 }
