@@ -152,10 +152,13 @@ int main(int argc, char* args[])
     Dot ball(320, 240);
     LoadImage("dot.bmp");
     ball.SetSurface(dot_surface);
-    ball.SetSpeed(10, 0);
+    ball.SetSpeed(1, 0);
 
-    Box box;
-    box.init(640 - kBoxWidth, 0);
+    Box player1;
+    player1.init(640 - kBoxWidth, 0, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN);
+
+    Box player2;
+    player2.init(0, 0, SDL_SCANCODE_W, SDL_SCANCODE_S);
 
     bool quit = false;
 
@@ -171,27 +174,37 @@ int main(int argc, char* args[])
 
     while (!quit)
     {
-        fps.StartClock();
+        fps.start();
+        update.start();
         int i = 0;
+        frames++;
         while (i < 10 && SDL_PollEvent(&event))
         {
             i++;
-            box.HandleEvent(event);
-            frames++;
+            player1.HandleEvent(event);
+            player2.HandleEvent(event);
             std::cout << frames << endl;
         }
-        box.Move();
-        ball.Move(box);
-        SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
-        box.Display(window_surface);
-        ball.Display(window_surface);
-        //TODO fps change
-        if (fps.GetTicks() < (1000 / kFramesPerSeconds))
+        if (update.get_ticks() > 1000)
         {
-            SDL_Delay((1000 / kFramesPerSeconds) - fps.GetTicks());
-            fps.StopClock();
+            int average = frames / (update.get_ticks() / 1000.f);
+            stringstream ss;
+            ss << average;
+            SDL_SetWindowTitle(window, ss.str().c_str());
+            frames = 0;
         }
-
+        player1.Move();
+        player2.Move();
+        ball.Move(player1, player2);
+        SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
+        //TODO fps change
+        if (fps.get_ticks() < (1000 / kFramesPerSeconds))
+        {
+            SDL_Delay((1000 / kFramesPerSeconds) - fps.get_ticks());
+        }
+        player1.Display(window_surface);
+        player2.Display(window_surface);
+        ball.Display(window_surface);
         SDL_UpdateWindowSurface(window);
     }
 

@@ -1,11 +1,14 @@
 #include "public.h"
 
-void Box::init(int x, int y)
+void Box::init(int x, int y, int u, int d)
 {
     rect.x = x;
     rect.y = y;
     rect.w = kBoxWidth;
     rect.h = kBoxHeight;
+    
+    up = u;
+    down = d;
 
     x_speed = 0;
     y_speed = 0;

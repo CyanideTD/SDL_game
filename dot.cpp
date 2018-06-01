@@ -50,8 +50,28 @@ void Dot::HandleEvent(const SDL_Event & event)
 {
 }
 
-void Dot::Move(Box & box)
+void Dot::Move(Box & player1, Box & player2)
 {
+    int collision_code = Collision::CheckCollision(this, &player1);
+    if (collision_code != 0)
+    {
+        rect.x -= x_speed;
+
+        x_speed = -x_speed;
+        y_speed += player1.GetSpeedY() / 2;
+        return;
+    }
+
+    collision_code = Collision::CheckCollision(this, &player2);
+    if (collision_code != 0)
+    {
+        rect.x -= x_speed;
+
+        x_speed = -x_speed;
+        y_speed += player2.GetSpeedY() / 2;
+        return;
+    }
+
     rect.x += x_speed;
 
     if (rect.x < 0)
@@ -80,16 +100,6 @@ void Dot::Move(Box & box)
         y_speed = -y_speed;
     }
 
-    ShiftBox();
-    int collision_code = Collision::CheckCollision(this, &box);
-    if (collision_code != 0)
-    {
-        rect.x -= x_speed;
-        rect.y -= y_speed;
-
-        x_speed = -x_speed;
-        y_speed += box.GetSpeedY();
-    }
 }
 
 void Dot::ShiftBox()

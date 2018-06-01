@@ -17,7 +17,7 @@ public:
 public:
     Dot(int x, int y);
     void HandleEvent(const SDL_Event & event);
-    void Move(Box & box);
+    void Move(Box & player1, Box & player2);
     void ShiftBox();
     void SetSpeed(int x, int y);
     void Display(SDL_Surface* surface);
