@@ -1,5 +1,5 @@
 #pragma once
-#include "std_header.h"
+#include "public.h"
 
 class Object
 {
@@ -11,5 +11,4 @@ public:
     virtual void init(int x, int y) = 0;
     virtual void Move() = 0;
     virtual void Display(SDL_Surface* surface) = 0;
-    virtual void CheckCollision(Object * object) = 0;
 };

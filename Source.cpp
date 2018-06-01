@@ -1,4 +1,4 @@
-#include "std_header.h"
+#include "public.h"
 
 using namespace std;
 
@@ -149,17 +149,17 @@ int main(int argc, char* args[])
     window_surface = SDL_GetWindowSurface(window);
     SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
 
-    //LoadImage("button.png");
-
-    Dot player(0, 0);
-    Dot barrier(200, 200);
+    Dot ball(320, 240);
     LoadImage("dot.bmp");
+    ball.SetSurface(dot_surface);
+    ball.SetSpeed(10, 0);
+
+    Box box;
+    box.init(640 - kBoxWidth, 0);
 
     bool quit = false;
 
     SDL_Event event;
-
-    //button.ShowButton();
 
     Timer fps;
 
@@ -172,17 +172,20 @@ int main(int argc, char* args[])
     while (!quit)
     {
         fps.StartClock();
-        while (SDL_PollEvent(&event))
+        int i = 0;
+        while (i < 10 && SDL_PollEvent(&event))
         {
-            player.HandleEvent(event);
+            i++;
+            box.HandleEvent(event);
             frames++;
             std::cout << frames << endl;
         }
-        player.Move(barrier);
+        box.Move();
+        ball.Move(box);
         SDL_FillRect(window_surface, &window_surface->clip_rect, SDL_MapRGB(window_surface->format, 0xFF, 0xFF, 0xFF));
-        SDL_BlitSurface(dot_surface, NULL, window_surface, &barrier.rect);
-        SDL_BlitSurface(dot_surface, NULL, window_surface, &player.rect);
-
+        box.Display(window_surface);
+        ball.Display(window_surface);
+        //TODO fps change
         if (fps.GetTicks() < (1000 / kFramesPerSeconds))
         {
             SDL_Delay((1000 / kFramesPerSeconds) - fps.GetTicks());

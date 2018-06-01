@@ -1,7 +1,4 @@
-#include "dot.h"
-#include "SDL.h"
-#include "stdio.h"
-#include "std_header.h"
+#include "public.h"
 
 Dot::Dot(int x, int y)
 {
@@ -51,90 +48,22 @@ Dot::Dot(int x, int y)
 
 void Dot::HandleEvent(const SDL_Event & event)
 {
-
-    if (event.type == SDL_KEYDOWN)
-    {
-        const Uint8* keystate = SDL_GetKeyboardState(NULL);
-        switch (event.key.keysym.scancode)
-        {
-        case SDL_SCANCODE_UP:
-            if (y_speed == 0)
-            {
-                y_speed -= 1;
-            }
-            break;
-        case SDL_SCANCODE_DOWN:
-            if (y_speed == 0)
-            {
-                y_speed += 1;
-            }
-            break;
-        case SDL_SCANCODE_LEFT:
-            if (x_speed == 0)
-            {
-                x_speed -= 1;
-            }
-            break;
-        case SDL_SCANCODE_RIGHT:
-            if (x_speed == 0)
-            {
-                x_speed += 1;
-            }
-            break;
-        default:
-            break;
-        }
-        printf("x_speed: %d \n", x_speed);
-        printf("y_speed: %d \n", y_speed);
-    }
-    else if (event.type == SDL_KEYUP)
-    {
-        switch (event.key.keysym.scancode)
-        {
-        case SDL_SCANCODE_UP:
-            if (y_speed < 0)
-            {
-                y_speed += 1;
-            }
-            break;
-        case SDL_SCANCODE_DOWN:
-            if (y_speed > 0)
-            {
-                y_speed -= 1;
-            }
-            break;
-        case SDL_SCANCODE_LEFT:
-            if (x_speed < 0)
-            {
-                x_speed += 1;
-            }
-            break;
-        case SDL_SCANCODE_RIGHT:
-            if (x_speed > 0)
-            {
-                x_speed -= 1;
-            }
-            break;
-        default:
-            break;
-        }
-        printf("x_speed: %d \n", x_speed);
-        printf("y_speed: %d \n", y_speed);
-    }
 }
 
-void Dot::Move(const Dot & dot)
+void Dot::Move(Box & box)
 {
     rect.x += x_speed;
 
     if (rect.x < 0)
     {
         rect.x = 0;
+        x_speed = -x_speed;
     }
 
     if (rect.x > kScreenWidth - kDotWidth)
     {
         rect.x = kScreenWidth - kDotWidth;
+        x_speed = -x_speed;
     }
 
     rect.y += y_speed;
@@ -142,19 +71,24 @@ void Dot::Move(const Dot & dot)
     if (rect.y < 0)
     {
         rect.y = 0;
+        y_speed = -y_speed;
     }
 
     if (rect.y > kScreenHeight - kDotHeight)
     {
         rect.y = kScreenHeight - kDotHeight;
+        y_speed = -y_speed;
     }
 
     ShiftBox();
-
-    if (CheckBoxesCollision(collision_box, dot.collision_box))
+    int collision_code = Collision::CheckCollision(this, &box);
+    if (collision_code != 0)
     {
         rect.x -= x_speed;
         rect.y -= y_speed;
+
+        x_speed = -x_speed;
+        y_speed += box.GetSpeedY();
     }
 }
 
@@ -169,4 +103,20 @@ void Dot::ShiftBox()
         collision_box[set].y = y + r;
         r += collision_box[set].h;
     }
+}
+
+void Dot::SetSpeed(int x, int y)
+{
+    x_speed = x;
+    y_speed = y;
+}
+
+void Dot::Display(SDL_Surface * window_surface)
+{
+    SDL_BlitSurface(surface, NULL, window_surface, &rect);
+}
+
+void Dot::SetSurface(SDL_Surface * image)
+{
+    surface = image;
 }

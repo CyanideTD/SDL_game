@@ -22,18 +22,18 @@ const int kDotHeight = 20;
 const int kDotWidth = 20;
 
 const int kFramesPerSeconds = 60;
-SDL_Rect wall;
+extern SDL_Rect wall;
 
-SDL_Window * window = NULL;
-SDL_Surface * window_surface = NULL;
-SDL_Surface * dot_surface = NULL;
-Mix_Music * music = NULL;
+extern SDL_Window * window;
+extern SDL_Surface * window_surface;
+extern SDL_Surface * dot_surface;
+extern Mix_Music * music;
 
-Mix_Chunk * scratch = NULL;
-Mix_Chunk * high = NULL;
-Mix_Chunk * med = NULL;
-Mix_Chunk * low = NULL;
+extern Mix_Chunk * scratch;
+extern Mix_Chunk * high;
+extern Mix_Chunk * med;
+extern Mix_Chunk * low;
 
-TTF_Font * font = NULL;
+extern TTF_Font * font;
 
-SDL_Rect clips[4];
+extern SDL_Rect clips[4];
