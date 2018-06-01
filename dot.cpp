@@ -55,20 +55,36 @@ void Dot::Move(Box & player1, Box & player2)
     int collision_code = Collision::CheckCollision(this, &player1);
     if (collision_code != 0)
     {
-        rect.x -= x_speed;
+        if (collision_code == 1)
+        {
+            rect.x -= x_speed;
 
-        x_speed = -x_speed;
-        y_speed += player1.GetSpeedY() / 2;
+            x_speed = -x_speed;
+            y_speed += player1.GetSpeedY() / 2;
+        }
+        else
+        {
+            rect.y -= y_speed;
+            y_speed = -y_speed;
+        }
         return;
     }
 
     collision_code = Collision::CheckCollision(this, &player2);
     if (collision_code != 0)
     {
-        rect.x -= x_speed;
+        if (collision_code == 1)
+        {
+            rect.x -= x_speed;
 
-        x_speed = -x_speed;
-        y_speed += player2.GetSpeedY() / 2;
+            x_speed = -x_speed;
+            y_speed += player2.GetSpeedY() / 2;
+        }
+        else
+        {
+            rect.y -= y_speed;
+            y_speed = -y_speed;
+        }
         return;
     }
 
